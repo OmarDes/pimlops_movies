@@ -15,7 +15,6 @@ Jinja2
 MarkupSafe
 orjson
 pydantic
-PyMySQL
 python-dotenv
 python-multipart
 PyYAML
