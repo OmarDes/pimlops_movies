@@ -1,36 +1,25 @@
 import pymysql
 from fastapi import FastAPI
 
-''' Conexion railway '''
+''' Conexion AWS '''
 connection = pymysql.connect(
-    host='containers-us-west-102.railway.app',
-    user='root',
-    password='1c6v9fKryhZk0mnpJQq6',
-    database='railway',
-    port=7367
+    host='database1.c9chjjynggol.us-east-1.rds.amazonaws.com',
+    user='admin',
+    password='eustht45tOtk',
+    database='pi_mlops',
+    port=3306
 )
-
-''' Conexion local 
-connection = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='PeliNegraBlanca',
-    database='pi_mlops'
-) '''
 
 app = FastAPI()
 
-
-@app.get('/numero_id/{id}')
+@app.get('/load_data/{id}')
 def numero_id(id:int):
-    '''Se ingresa el id y la funcion retorna la fila'''
-    with connection.cursor() as cursor:
-        cursor.execute(f"SELECT COUNT(*) FROM movies WHERE id = {id}")
-        respuesta = cursor.fetchone()
+    respuesta = 'incorrecto'
+    if id == 2:
+        respuesta = 'correcto'
     return {'mes':id, 'cantidad':respuesta}
 
 
-'''
 @app.get('/peliculas_mes/{mes}')
 def peliculas_mes(mes:str):
     #Se ingresa el mes y la funcion retorna la cantidad de peliculas que se estrenaron ese mes historicamente
@@ -66,4 +55,3 @@ def peliculas_mes(mes:str):
         cursor.execute(f"SELECT COUNT(*) FROM movies WHERE MONTH(release_date) = {mes_num}")
         respuesta = cursor.fetchone()
     return {'mes':mes, 'cantidad':respuesta}
-    '''
