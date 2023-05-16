@@ -21,4 +21,6 @@ En ese mismo archivo se realizan las transformaciones sugeridas
 
 En el archivo main.py esta el desarrollo de las API, incluida la funcion de ML
 
+La base de datos se cargo a el servicio AWS
+
 En este enlace: https://pi-mlops-omardes.up.railway.app/peliculas_mes/enero se puede acceder a la API deployada

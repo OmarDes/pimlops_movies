@@ -3,10 +3,7 @@ from fastapi import FastAPI
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-import uvicorn
-from fastapi import Request
+
 
 
 ''' Conexion AWS  '''
@@ -28,7 +25,6 @@ connection = pymysql.connect(
 ) '''
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
 
 
 ''' Funcion 1: Se ingresa el mes y la funcion retorna la cantidad de peliculas que se estrenaron ese mes historicamente '''
