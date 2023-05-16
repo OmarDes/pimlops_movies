@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Movie Recommendation System</title>
+</head>
+<body>
+    <h1>Movie Recommendation System</h1>
+
+    <h2>Get Number of Movies Released in a Month</h2>
+    <form action="/peliculas_mes/" method="get">
+        <input type="text" name="mes" placeholder="Enter month">
+        <input type="submit" value="Get">
+    </form>
+    <p>Number of movies released in the specified month: {{ peliculas_mes_result }}</p>
+
+    <h2>Get Number of Movies Released on a Day</h2>
+    <form action="/peliculas_dia" method="get">
+        <input type="text" name="dia" placeholder="Enter day">
+        <input type="submit" value="Get">
+    </form>
+    <p>Number of movies released on the specified day: {{ peliculas_dia_result }}</p>
+
+    <h2>Get Movie Franchise Details</h2>
+    <form action="/franquicia" method="get">
+        <input type="text" name="franquicia" placeholder="Enter franchise name">
+        <input type="submit" value="Get">
+    </form>
+    <p>Franchise: {{ franquicia_name }}</p>
+    <p>Number of movies: {{ franquicia_cantidad }}</p>
+    <p>Total revenue: {{ franquicia_ganancia_total }}</p>
+    <p>Average revenue: {{ franquicia_ganancia_promedio }}</p>
+
+    <h2>Get Number of Movies Produced in a Country</h2>
+    <form action="/peliculas_pais" method="get">
+        <input type="text" name="pais" placeholder="Enter country">
+        <input type="submit" value="Get">
+    </form>
+    <p>Number of movies produced in the specified country: {{ peliculas_pais_result }}</p>
+
+    <h2>Get Production Company Details</h2>
+    <form action="/productoras" method="get">
+        <input type="text" name="productora" placeholder="Enter production company">
+        <input type="submit" value="Get">
+    </form>
+    <p>Production company: {{ productora_name }}</p>
+    <p>Total revenue: {{ productora_ganancia_total }}</p>
+    <p>Number of movies produced: {{ productora_cantidad }}</p>
+
+    <h2>Get Return Details for a Movie</h2>
+    <form action="/retorno" method="get">
+        <input type="text" name="pelicula" placeholder="Enter movie title">
+        <input type="submit" value="Get">
+    </form>
+    <p>Movie: {{ retorno_title }}</p>
+    <p>Investment: {{ retorno_inversion }}</p>
+    <p>Revenue: {{ retorno_ganacia }}</p>
+    <p>Return: {{ retorno_retorno }}</p>
+    <p>Year: {{ retorno_anio }}</p>
+
+    <h2>Get Movie Recommendations</h2>
+    <form action="/recomendacion" method="get">
+        <input type="text" name="titulo" placeholder="Enter movie title">
+        <input type="submit" value="Get">
+    </form>
+    <p>Recommended movies: {{ recomendacion_lista }}</p>
+
+</body>
+</html>
+

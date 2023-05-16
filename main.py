@@ -1,5 +1,13 @@
 import pymysql
 from fastapi import FastAPI
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
+import uvicorn
+from fastapi import Request
+
 
 ''' Conexion AWS  '''
 connection = pymysql.connect(
@@ -20,6 +28,8 @@ connection = pymysql.connect(
 ) '''
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
 
 ''' Funcion 1: Se ingresa el mes y la funcion retorna la cantidad de peliculas que se estrenaron ese mes historicamente '''
 @app.get('/peliculas_mes/{mes}')
@@ -140,8 +150,34 @@ def retorno(pelicula:str):
     return {'pelicula':pelicula, 'inversion':rep_inversion, 'ganacia':rep_ganancia,'retorno':rep_retorno, 'anio':rep_anio}
 
 # ML
-'''Ingresas un nombre de pelicula y te recomienda las similares en una lista
+
+'''Ingresas un nombre de pelicula y te recomienda las similares en una lista '''
 @app.get('/recomendacion/{titulo}')
 def recomendacion(titulo:str):
     
-    return {'lista recomendada': respuesta} '''
+    query = "SELECT title FROM movies" 
+    df = pd.read_sql(query, connection) #Carga de datos
+
+    df['preprocessed_text'] = df['title'].fillna('')
+    df['preprocessed_text'] = df['preprocessed_text'].str.lower()
+
+    tfidf = TfidfVectorizer(max_features=50)
+    feature_vectors = tfidf.fit_transform(df['preprocessed_text']).toarray()
+
+    # Calculate pairwise cosine similarity
+    cosine_sim_matrix = cosine_similarity(feature_vectors)
+    
+    movie_index = df[df['{titulo}'] == titulo].index[0] #encontrar indice de pelicula en df
+    
+    movie_scores = list(enumerate(cosine_sim_matrix[movie_index]))
+
+    # Sort the movies based on similarity scores
+    movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)
+
+    # Get top 5 similar movies (excluding the input movie itself)
+    top_movies = movie_scores[1:6]
+
+    # Retrieve the titles of the recommended movies
+    recommended_movies = [df.iloc[movie[0]]['{titulo}'] for movie in top_movies]
+    
+    return {'lista recomendada': recommended_movies}
