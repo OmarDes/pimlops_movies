@@ -6,23 +6,23 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 
 
-''' Conexion AWS  
+''' Conexion AWS  '''
 connection = pymysql.connect(
     host='database1.c9chjjynggol.us-east-1.rds.amazonaws.com',
     user='admin',
     password='eustht45tOtk',
     database='pi_mlops',
     port=3306
-)   '''
+)   
 
-''' Conexion Servidor Local     '''
+''' Conexion Servidor Local     
 connection = pymysql.connect(
     host='localhost',
     user='root',
     password='PeliNegraBlanca',
     database='pi_movies',
     port=3306
-)   
+)   '''
 
 app = FastAPI()
 
