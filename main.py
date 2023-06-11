@@ -1,27 +1,28 @@
 import pymysql
 import pandas as pd
+import re
 from fastapi import FastAPI
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 
 
-''' Conexion AWS  '''
+''' Conexion AWS  
 connection = pymysql.connect(
     host='database1.c9chjjynggol.us-east-1.rds.amazonaws.com',
     user='admin',
     password='eustht45tOtk',
     database='pi_mlops',
     port=3306
-)   
+)   '''
 
-''' Conexion Servidor Local     
+''' Conexion Servidor Local     '''
 connection = pymysql.connect(
     host='localhost',
     user='root',
     password='PeliNegraBlanca',
     database='pi_movies',
     port=3306
-)   '''
+)   
 
 app = FastAPI()
 
@@ -95,7 +96,7 @@ def score_titulo(titulo: str):
         query = """
             SELECT `release_year`, `popularity`
             FROM `movies`
-            WHERE title = '{}'
+            WHERE title = "{}"
         """.format(titulo)
         cursor.execute(query)
         result = cursor.fetchone()
@@ -107,7 +108,12 @@ def score_titulo(titulo: str):
 @app.get('/votos_titulo/{titulo}')
 def votos_titulo(titulo:str):
     with connection.cursor() as cursor:
-        cursor.execute(f"SELECT `release_year`, `vote_count`, `vote_average` FROM `movies` WHERE `title` LIKE '%{titulo}%';")
+        query = """
+            SELECT `release_year`, `vote_count`, `vote_average` 
+            FROM `movies`
+            WHERE `title` LIKE "%{}%"
+        """.format(titulo)
+        cursor.execute(query)
         respuesta = cursor.fetchone()
     anho = respuesta[0]
     num_votos = respuesta[1]
@@ -123,7 +129,7 @@ def get_actor(actor:str):
         query = """
             SELECT SUM(`return`), COUNT(*)
             FROM movies
-            WHERE actors LIKE '%{}%';
+            WHERE actors LIKE "%{}%";
         """.format(actor)
         cursor.execute(query)
         resultado = cursor.fetchone()
@@ -139,14 +145,14 @@ def get_director(director:str):
         query1 = """
             SELECT SUM(`return`)
             FROM movies
-            WHERE director LIKE '%{}%';
+            WHERE director LIKE "%{}%";
         """.format(director)
         cursor.execute(query1)
         ganancia = cursor.fetchone()
         query2 = """
             SELECT title, release_year, budget, revenue, `return`
             FROM movies
-            WHERE director LIKE '%{}%';
+            WHERE director LIKE "%{}%";
         """.format(director)
         cursor.execute(query2)
         movies_data = cursor.fetchall()
@@ -170,10 +176,13 @@ def get_director(director:str):
 ''' Ingresas un nombre de pelicula y te recomienda las similares en una lista    '''
 @app.get('/recomendacion/{titulo}')
 def recomendacion(titulo:str):
-    
-    cursor = connection.cursor()
-    query = f"SELECT genres, original_language FROM movies WHERE title LIKE '%{titulo}%'"
-    cursor.execute(query)
+    with connection.cursor() as cursor:
+        query = """
+            SELECT genres, original_language 
+            FROM movies
+            WHERE title LIKE '%{}%'
+        """.format(titulo)
+        cursor.execute(query)
     resultado = cursor.fetchone()
 
     # Extracting the genre string from the response (assuming it's the first and only element)
@@ -181,18 +190,23 @@ def recomendacion(titulo:str):
     # List of genres to check for in the given order
     genres_to_check = ['TV Movie', 'Western', 'War', 'History', 'Music', 'Animation', 'Fantasy', 'Mystery', 'Family', 'Science Fiction', 'Adventure', 'Documentary', 'Crime', 'Horror', 'Action', 'Romance', 'Thriller', 'Comedy', 'Drama']
     # Variable to store the matching genre
-    genre = None
+    genre = ''
     # Iterate through the genres to check
     for genre_to_check in genres_to_check:
         if genre_to_check in genre_string:
             genre = genre_to_check
             break
+    if genre == '':
+        genre = 'Drama'
     idioma = resultado[1]
-
-    movies = pd.read_sql(f"SELECT title FROM movies WHERE genres LIKE '%{genre}%' AND original_language LIKE '%{idioma}%'", con=connection)
-
-    query = f"SELECT title FROM movies WHERE genres LIKE '%{genre}%' AND original_language LIKE '%{idioma}%'"
-    cursor.execute(query)
+    if idioma == '':
+        idioma = 'en'
+    with connection.cursor() as cursor:
+        query = """SELECT title
+                FROM movies
+                WHERE genres LIKE "%{}%" AND original_language LIKE "%{}%"
+            """.format(genre,idioma)
+        cursor.execute(query)
     movies_data = cursor.fetchall()
 
     if not movies_data:
@@ -200,8 +214,14 @@ def recomendacion(titulo:str):
     
     movies = pd.DataFrame(movies_data, columns=['title'])
 
+    def clean_title(title):
+        return re.sub("[^a-zA-Z0-9 ]","", title)
+    
+    movies["clean_title"] = movies["title"].apply(clean_title)
+
+
     tfidf = TfidfVectorizer()
-    tfidf_matrix = tfidf.fit_transform(movies["title"])
+    tfidf_matrix = tfidf.fit_transform(movies["clean_title"])
 
     cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
 
