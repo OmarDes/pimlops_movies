@@ -1,9 +1,8 @@
 import pymysql
-from fastapi import FastAPI
 import pandas as pd
+from fastapi import FastAPI
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
+from sklearn.metrics.pairwise import linear_kernel
 
 
 ''' Conexion AWS  '''
@@ -13,23 +12,23 @@ connection = pymysql.connect(
     password='eustht45tOtk',
     database='pi_mlops',
     port=3306
-)
+)   
 
-''' Conexion Servidor Local 
+''' Conexion Servidor Local     
 connection = pymysql.connect(
     host='localhost',
     user='root',
-    password='**********',
-    database='pi_mlops',
+    password='PeliNegraBlanca',
+    database='pi_movies',
     port=3306
-) '''
+)   '''
 
 app = FastAPI()
 
 
 ''' Funcion 1: Se ingresa el mes y la funcion retorna la cantidad de peliculas que se estrenaron ese mes historicamente '''
-@app.get('/peliculas_mes/{mes}')
-def peliculas_mes(mes:str):
+@app.get('/cantidad_filmaciones_mes/{mes}')
+def cantidad_filmaciones_mes(mes:str):
     mes_num : int
     if mes == 'enero':
         mes_num = 1
@@ -64,8 +63,8 @@ def peliculas_mes(mes:str):
     return {'mes':mes, 'cantidad':respuesta}
 
 ''' Funcion 2: Se ingresa el dia y la funcion retorna la cantidad de peliculas que se estrenaron ese dia historicamente '''
-@app.get('/peliculas_dia/{dia}')
-def peliculas_dia(dia:str):
+@app.get('/cantidad_filmaciones_dia/{dia}')
+def cantidad_filmaciones_dia(dia:str):
     day : str
     if dia == 'lunes':
         day = 'monday'
@@ -89,91 +88,135 @@ def peliculas_dia(dia:str):
         
     return {'dia':dia, 'cantidad':respuesta}
 
-'''Funcion 3 Se ingresa la franquicia, retornando la cantidad de peliculas, ganancia total y promedio'''
-@app.get('/franquicia/{franquicia}')
-def franquicia(franquicia: str):
+'''Funcion 3 Se ingresa titulo filmacion, retornando titulo, anho de estreno y score'''
+@app.get('/score_titulo/{titulo}')
+def score_titulo(titulo: str):
     with connection.cursor() as cursor:
         query = """
-            SELECT COUNT(*) AS num_rows, SUM(revenue) AS total_revenue
-            FROM movies
-            WHERE belongs_to_collection LIKE '%{}%'
-        """.format(franquicia)
+            SELECT `release_year`, `popularity`
+            FROM `movies`
+            WHERE title = '{}'
+        """.format(titulo)
         cursor.execute(query)
         result = cursor.fetchone()
-        num_rows = result[0]
-        total_revenue = result[1]
-        ganancia_promedio = total_revenue / num_rows if num_rows > 0 else 0
-    return {'franquicia': franquicia, 'cantidad': num_rows, 'ganancia_total': total_revenue, 'ganancia_promedio': ganancia_promedio}
+        anho = result[0]
+        score = result[1]
+    return {'Titulo': titulo, 'Anho': anho, 'Popularidad': score}
 
-''' Funcion 4 Ingresas el pais, retornando la cantidad de peliculas producidas en el mismo'''
-@app.get('/peliculas_pais/{pais}')
-def peliculas_pais(pais:str):
+''' Funcion 4 Ingresa titulo, retorna el titulo, la cantidad de votos y el promedio de votaciones'''
+@app.get('/votos_titulo/{titulo}')
+def votos_titulo(titulo:str):
     with connection.cursor() as cursor:
-        cursor.execute(f"SELECT COUNT(*) AS total_rows FROM movies WHERE production_countries LIKE '%{pais}%';")
+        cursor.execute(f"SELECT `release_year`, `vote_count`, `vote_average` FROM `movies` WHERE `title` LIKE '%{titulo}%';")
         respuesta = cursor.fetchone()
-    return {'pais':pais, 'cantidad':respuesta}
+    anho = respuesta[0]
+    num_votos = respuesta[1]
+    prom_votos = respuesta[2]
+    if num_votos < 2000:
+        return {'Tiene menos de 2000 votos'}
+    return {'Titulo':titulo, 'Anho de Estreno':anho, 'Numero de Votos':num_votos , 'Promedio de votos':prom_votos}
 
-'''Funcion 5 Ingresas la productora, retornando la ganancia toal y la cantidad de peliculas que produjeron '''
-@app.get('/productoras/{productora}')
-def productoras(productora:str):
+'''Funcion 5 Ingresa nombre de actor, retornando la ganancia toal y la cantidad de peliculas y promedio ganancia '''
+@app.get('/get_actor/{actor}')
+def get_actor(actor:str):
     with connection.cursor() as cursor:
         query = """
-            SELECT COUNT(*) AS total_rows, SUM(revenue) AS total_revenue
+            SELECT SUM(`return`), COUNT(*)
             FROM movies
-            WHERE production_companies LIKE '%{}%';
-        """.format(productora)
+            WHERE actors LIKE '%{}%';
+        """.format(actor)
         cursor.execute(query)
-        result = cursor.fetchone()
-        num_movies = result[0]
-        total_revenue = result[1]
-    return {'productora':productora, 'ganancia_total':total_revenue, 'cantidad':num_movies}
+        resultado = cursor.fetchone()
+        ganancia = resultado[0]
+        num_peliculas = resultado[1]
+        prom_ganancia = ganancia/num_peliculas
+    return {'Actor':actor, 'Numero de Peliculas':num_peliculas, 'Ganancia Total':ganancia, 'Ganancia Promedio':prom_ganancia}
 
-'''Funcion 6 Ingresa la pelicula, retornando la inversion, la ganancia, el retorno y el año en el que se lanzo'''
-@app.get('/retorno/{pelicula}')
-def retorno(pelicula:str):
+'''Funcion 6 Ingresa nombre de director, retornando ganancia total, y lista de peliculas con la fecha de lanzamiento, retorno y g'''
+@app.get('/get_director/{director}')
+def get_director(director:str):
     with connection.cursor() as cursor:
-        query = """
-            SELECT `budget`, `revenue`, `return`, `release_year`
+        query1 = """
+            SELECT SUM(`return`)
             FROM movies
-            WHERE title LIKE '{}';
-        """.format(pelicula)
-        cursor.execute(query)
-        result = cursor.fetchone()
-        rep_inversion = result[0]
-        rep_ganancia = result[1]
-        rep_retorno= result[2]
-        rep_anio= result[3]
-    return {'pelicula':pelicula, 'inversion':rep_inversion, 'ganacia':rep_ganancia,'retorno':rep_retorno, 'anio':rep_anio}
+            WHERE director LIKE '%{}%';
+        """.format(director)
+        cursor.execute(query1)
+        ganancia = cursor.fetchone()
+        query2 = """
+            SELECT title, release_year, budget, revenue, `return`
+            FROM movies
+            WHERE director LIKE '%{}%';
+        """.format(director)
+        cursor.execute(query2)
+        movies_data = cursor.fetchall()
+        data = {} #Creo diccionario para almacenar los resultados
+        data['Director'] = director
+        data['Ganancia Total'] = ganancia[0]
+        data['Peliculas'] = []
+        for row in movies_data:
+            pelicula = {}
+            pelicula['Titulo'] = row[0]
+            pelicula['Anho de lanzamiento'] = row[1]
+            pelicula['Presupuesto'] = row[2]
+            pelicula['Ganancia'] = row[3]
+            pelicula['Retorno'] = row[4]
+            data['Peliculas'].append(pelicula)
+    return data
 
 # ML
 
-'''Ingresas un nombre de pelicula y te recomienda las similares en una lista '''
+
+''' Ingresas un nombre de pelicula y te recomienda las similares en una lista    '''
 @app.get('/recomendacion/{titulo}')
 def recomendacion(titulo:str):
     
-    query = "SELECT title FROM movies" 
-    df = pd.read_sql(query, connection) #Carga de datos
+    cursor = connection.cursor()
+    query = f"SELECT genres, original_language FROM movies WHERE title LIKE '%{titulo}%'"
+    cursor.execute(query)
+    resultado = cursor.fetchone()
 
-    df['preprocessed_text'] = df['title'].fillna('')
-    df['preprocessed_text'] = df['preprocessed_text'].str.lower()
+    # Extracting the genre string from the response (assuming it's the first and only element)
+    genre_string = resultado[0]
+    # List of genres to check for in the given order
+    genres_to_check = ['TV Movie', 'Western', 'War', 'History', 'Music', 'Animation', 'Fantasy', 'Mystery', 'Family', 'Science Fiction', 'Adventure', 'Documentary', 'Crime', 'Horror', 'Action', 'Romance', 'Thriller', 'Comedy', 'Drama']
+    # Variable to store the matching genre
+    genre = None
+    # Iterate through the genres to check
+    for genre_to_check in genres_to_check:
+        if genre_to_check in genre_string:
+            genre = genre_to_check
+            break
+    idioma = resultado[1]
 
-    tfidf = TfidfVectorizer(max_features=50)
-    feature_vectors = tfidf.fit_transform(df['preprocessed_text']).toarray()
+    movies = pd.read_sql(f"SELECT title FROM movies WHERE genres LIKE '%{genre}%' AND original_language LIKE '%{idioma}%'", con=connection)
 
-    # Calculate pairwise cosine similarity
-    cosine_sim_matrix = cosine_similarity(feature_vectors)
+    query = f"SELECT title FROM movies WHERE genres LIKE '%{genre}%' AND original_language LIKE '%{idioma}%'"
+    cursor.execute(query)
+    movies_data = cursor.fetchall()
+
+    if not movies_data:
+        return {'error': 'No se encontraron peliculas'}
     
-    movie_index = df[df['{titulo}'] == titulo].index[0] #encontrar indice de pelicula en df
+    movies = pd.DataFrame(movies_data, columns=['title'])
+
+    tfidf = TfidfVectorizer()
+    tfidf_matrix = tfidf.fit_transform(movies["title"])
+
+    cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
+
+    def get_recommendations(title):
+        # Get the index of the movie that matches the title
+        idx = movies[movies['title'] == title].index[0]
+        # Get the pairwise similarity scores of all movies with that movie
+        sim_scores = list(enumerate(cosine_sim[idx]))
+        # Sort the movies based on the similarity scores
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+        # Get the indices of the 10 most similar movies
+        sim_indices = [i[0] for i in sim_scores[1:11]]
+        # Return the titles of the 10 most similar movies
+        return movies['title'].iloc[sim_indices]
     
-    movie_scores = list(enumerate(cosine_sim_matrix[movie_index]))
+    recommended_movies = get_recommendations(titulo)
 
-    # Sort the movies based on similarity scores
-    movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)
-
-    # Get top 5 similar movies (excluding the input movie itself)
-    top_movies = movie_scores[1:6]
-
-    # Retrieve the titles of the recommended movies
-    recommended_movies = [df.iloc[movie[0]]['{titulo}'] for movie in top_movies]
-    
-    return {'lista recomendada': recommended_movies}
+    return {'lista recomendada': recommended_movies} 
