@@ -209,7 +209,7 @@ def recomendacion(titulo:str):
                 FROM movies
                 WHERE genres LIKE "%{}%"
                 ORDER BY vote_average DESC
-                LIMIT 5000
+                LIMIT 4000
             """.format(genre,idioma)
         cursor.execute(query)
     movies_data = cursor.fetchall()
@@ -221,9 +221,6 @@ def recomendacion(titulo:str):
     movies['description'] = movies['title'] + ' ' + movies['overview'] + ' ' + movies['tagline'] + ' ' + movies['actors'] + ' ' + movies['director']
 
     movies["clean_description"] = movies["description"].apply(clean_text)
-
-
-    #movies['keywords'] = movies['description'].apply(extract_keywords).apply(lambda x: " ".join(x))
 
     tfidf = TfidfVectorizer()
     tfidf_matrix = tfidf.fit_transform(movies['clean_description'])
