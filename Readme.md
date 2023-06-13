@@ -8,19 +8,46 @@
 <img src="https://user-images.githubusercontent.com/67664604/217914153-1eb00e25-ac08-4dfa-aaf8-53c09038f082.png"  height=300>
 </p>
 
-Omar Giovanni Russi  
+**Omar Giovanni Russi**
 
 <hr>  
 
-## **Proyecto**
-Primero el dataset es explorado con MS VS studio, y se corrigen filas que no permiten su carga en MySQL WorkBench
-Ese primer archivo es: EDA.ipynb
+# **Descripción del problema**
+Se requiere construir un sistema de recomendación de películas.
 
-Se carga dataset en una base de datos local, con las instrucciones en el arhchivo ETL_MLOps.sql
-En ese mismo archivo se realizan las transformaciones sugeridas
+La base de su construcción es un dataset con alrededor de 45 mil registros de películas, de varios orígenes y épocas. La información está dividida en dos archivos. 'movies_dataset.csv' contiene información como fecha de estreno, origen, presupuesto, productoras, etc. El archivo 'credits.csv' tiene información sobre todo el personal que participó en la producción de la película.
 
-En el archivo main.py esta el desarrollo de las API, incluida la funcion de ML
+# **Desarrolo del Proyecto**
 
-La base de datos se cargo a el servicio AWS
+## **EDA**
+Primero el dataset es explorado con MS VS studio:
++ Se determinan las dimensiones de ambos dataset, y sus respectivos camopos.
 
-En este enlace: https://pi-mlops-omardes.up.railway.app se puede acceder a la API deployada
++ Se corrigen filas que no permiten su carga en MySQL WorkBench.
+
++ Se extraen los datos sobre actores y directores de 'credits.csv' y se unen a 'movies_dataset.csv' como columnas adiionales.
+
++ El archivo donde se desarrolla el proceso es: EDA.ipynb
+
+## **ETL**
+Se carga dataset en una base de datos local MySQL, con las instrucciones desarrolladas en el arhchivo 'ETL_MLOps.sql'.
+
+En ese mismo archivo se realizan las transformaciones sugeridas.
+
+Se hacen transformaciones adicionales como eliminar columnas no requeridas para las consultas o eliminar registros duplicados.
+
+Finalmente se carga el dataset depurado a una base de datos MySQL alojada en el servicio de Amazon(AWS).
+
+## **API**
+
+Primero desarrollo las consultas a la base de datos para poder responder a la informacion requeridad por los 6 endpoints que se consumen por la API. Las describo en el archivo 'Consultas_API.sql'.
+
+En el archivo 'main.py' esta el desarrollo de las API, incluida la funcion de ML
+
+La API se desarrolla con el framework FASTAPI. Esta se deploya en el servicio gratuito de render. En este enlace: mlops-omardes.onrender.com/docs se puede acceder a la API deployada
+
+## **Modelo de Recomendacion**
+
+Se utiliza el algoritmo de similitud del coseno por su sencillez y baja demanda de recursos computacionales.
+
+Sin embargo no se puede evaluar todos los registros para hallar la recomendacion a un titulo en concreto, por eso antes de aplicar el algoritmo hago una consulta para saber a que genero pertenece la pelicula, luego hago la consulta con todas las peliculas de ese genero con un limite de 4000 registros.

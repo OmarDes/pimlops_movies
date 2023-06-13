@@ -52,26 +52,3 @@ FROM movies
 WHERE director LIKE '%Steven Spielberg%';
 
 -- ===========
-
-SELECT *
-FROM movies
-WHERE tagline IS NULL OR tagline = '';
-
-SELECT *
-FROM movies
-WHERE tagline IS NULL OR overview = '';
-
-SELECT *
-FROM movies
-WHERE tagline IS NULL OR title = '';
-
-UPDATE movies
-SET tagline = title
-WHERE tagline IS NULL OR tagline = '';
-
-UPDATE movies
-SET overview = title
-WHERE overview IS NULL OR overview = '';
-
-SELECT title, tagline, overview
-FROM movies;

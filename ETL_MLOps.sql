@@ -119,8 +119,7 @@ ALTER TABLE `movies` ADD COLUMN `return` FLOAT;
 UPDATE `movies` 
 SET `return` = CASE WHEN `budget` = 0 THEN 0 ELSE `revenue` / `budget` END;
 
-/*Algunos registros estan repetidos en ambos archivos, antes de unificar en una sola tabla 
-	se eliminan esos repetidos.*/
+/*Algunos registros estan repetidos, se eliminan.*/
     
 SELECT id, COUNT(*) AS count
 FROM movies
@@ -135,15 +134,14 @@ WHERE id = 132641;
 -- Algunos registros tienen todos sus campos repetidos, mientras que otros apenas difieren en el campo 'popularity'
 
 -- == Eliminar duplicados para 'movies' de las filas completamente identicas== 
--- create a temporary table with distinct rows
+-- Se crea una tabla temporal para almacenar todos los registros menos los repetidos
 DROP TABLE IF EXISTS `tmp`;
 CREATE TEMPORARY TABLE tmp AS
 SELECT DISTINCT * FROM movies;
 
--- truncate the original table
 TRUNCATE movies;
 
--- insert the rows from the temporary table
+-- Reinsercion de los registros desde la tabla temporal
 INSERT INTO movies
 SELECT * FROM tmp;
 
@@ -151,37 +149,28 @@ SELECT * FROM tmp;
 -- == para esas saco el promedio entre los diferentes valores en 'popularity' ==
 -- == y dejo una copia de ese registro con ese nuevo valor en 'popularity'    == 
 
--- Create a temporary table with all the columns from movies
 DROP TABLE IF EXISTS `temp_movies`;
 CREATE TEMPORARY TABLE `temp_movies` AS
 SELECT * FROM movies;
 
-
--- Update the popularity column with the average of duplicate rows
 UPDATE temp_movies t
 SET popularity = (SELECT AVG(popularity) FROM movies m WHERE m.id = t.id)
 WHERE id IN (SELECT id FROM movies GROUP BY id HAVING COUNT(*) > 1);
 
--- Delete the duplicate rows from the original table
 DELETE FROM movies
 WHERE id IN (SELECT id FROM temp_movies);
 
--- Insert the rows with average popularity from the temporary table
 INSERT INTO movies
 SELECT * FROM temp_movies;
 
--- Drop the temporary table
 DROP TABLE temp_movies;
 
--- create a temporary table with distinct rows
 DROP TABLE IF EXISTS `tmp`;
 CREATE TEMPORARY TABLE tmp AS
 SELECT DISTINCT * FROM movies;
 
--- truncate the original table
 TRUNCATE movies;
 
--- insert the rows from the temporary table
 INSERT INTO movies
 SELECT * FROM tmp;
 
