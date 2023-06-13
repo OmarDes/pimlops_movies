@@ -209,22 +209,23 @@ def recomendacion(titulo:str):
                 FROM movies
                 WHERE genres LIKE "%{}%" AND original_language = "{}"
                 ORDER BY vote_average DESC
-                LIMIT 7615
+                LIMIT 6000
             """.format(genre,idioma)
         cursor.execute(query)
     movies_data = cursor.fetchall()
 
-    #if len(movies_data) < 1000:
-    #    with connection.cursor() as cursor:
-    #        query = """
-    #            SELECT title
-    #            FROM movies
-    #            WHERE genres LIKE "%{}%" AND (original_language = "{}" OR original_language = "en")
-    #            ORDER BY vote_average DESC
-    #            LIMIT 7615
-    #        """.format(genre, idioma)
-    #        cursor.execute(query)
-    #    movies_data = cursor.fetchall()
+    if len(movies_data) < 1000:
+        movies_data = ''
+        with connection.cursor() as cursor:
+            query = """
+                SELECT title
+                FROM movies
+                WHERE genres LIKE "%{}%" AND (original_language = "{}" OR original_language = "en")
+                ORDER BY vote_average DESC
+                LIMIT 6000
+            """.format(genre, idioma)
+            cursor.execute(query)
+        movies_data = cursor.fetchall()
 
     if not movies_data:
         return {'error': 'No se encontraron peliculas'}
