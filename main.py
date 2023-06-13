@@ -235,7 +235,7 @@ def recomendacion(titulo:str):
         # Sort the movies based on the similarity scores
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
         # Get the indices of the 10 most similar movies
-        sim_indices = [i[0] for i in sim_scores[1:11]]
+        sim_indices = [i[0] for i in sim_scores[1:6]]
         # Return the titles of the 10 most similar movies
         return movies['title'].iloc[sim_indices]
     
