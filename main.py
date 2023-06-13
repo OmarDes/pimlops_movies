@@ -19,7 +19,7 @@ connection = pymysql.connect(
 connection = pymysql.connect(
     host='localhost',
     user='root',
-    password='PeliNegraBlanca',
+    password='',
     database='pi_movies',
     port=3306
 )   '''
@@ -172,6 +172,8 @@ def get_director(director:str):
 
 # ML
 
+def clean_text(text):
+    return re.sub("[^a-zA-Z0-9 ]","", text)
 
 ''' Ingresas un nombre de pelicula y te recomienda las similares en una lista    '''
 @app.get('/recomendacion/{titulo}')
@@ -180,7 +182,7 @@ def recomendacion(titulo:str):
         query = """
             SELECT genres, original_language 
             FROM movies
-            WHERE title LIKE '%{}%'
+            WHERE title LIKE "%{}%"
         """.format(titulo)
         cursor.execute(query)
     resultado = cursor.fetchone()
@@ -188,7 +190,7 @@ def recomendacion(titulo:str):
     # Extracting the genre string from the response (assuming it's the first and only element)
     genre_string = resultado[0]
     # List of genres to check for in the given order
-    genres_to_check = ['TV Movie', 'Western', 'War', 'History', 'Music', 'Animation', 'Fantasy', 'Mystery', 'Family', 'Science Fiction', 'Adventure', 'Documentary', 'Crime', 'Horror', 'Action', 'Romance', 'Thriller', 'Comedy', 'Drama']
+    genres_to_check = ['Western', 'War', 'History', 'Music', 'Animation', 'Fantasy', 'Mystery', 'Family', 'Science Fiction', 'Adventure', 'Documentary', 'Crime', 'Horror', 'Action', 'Romance', 'Thriller', 'Comedy', 'Drama']
     # Variable to store the matching genre
     genre = ''
     # Iterate through the genres to check
@@ -201,8 +203,9 @@ def recomendacion(titulo:str):
     idioma = resultado[1]
     if idioma == '':
         idioma = 'en'
+
     with connection.cursor() as cursor:
-        query = """SELECT title
+        query = """SELECT title, overview, tagline, actors, director
                 FROM movies
                 WHERE genres LIKE "%{}%" AND original_language = "{}"
                 ORDER BY vote_average DESC
@@ -211,32 +214,34 @@ def recomendacion(titulo:str):
         cursor.execute(query)
     movies_data = cursor.fetchall()
 
-    
-    if len(movies_data) < 100:
-        with connection.cursor() as cursor:
-            query = """
-                SELECT title
-                FROM movies
-                WHERE genres LIKE "%{}%" AND (original_language = "{}" OR original_language = "en")
-                ORDER BY vote_average DESC
-                LIMIT 7614
-            """.format(genre, idioma)
-            cursor.execute(query)
-        movies_data = cursor.fetchall()
+    #if len(movies_data) < 1000:
+    #    with connection.cursor() as cursor:
+    #        query = """
+    #            SELECT title
+    #            FROM movies
+    #            WHERE genres LIKE "%{}%" AND (original_language = "{}" OR original_language = "en")
+    #            ORDER BY vote_average DESC
+    #            LIMIT 7615
+    #        """.format(genre, idioma)
+    #        cursor.execute(query)
+    #    movies_data = cursor.fetchall()
 
     if not movies_data:
         return {'error': 'No se encontraron peliculas'}
     
-    movies = pd.DataFrame(movies_data, columns=['title'])
-
-    def clean_title(title):
-        return re.sub("[^a-zA-Z0-9 ]","", title)
+    movies = pd.DataFrame(movies_data, columns=['title', 'overview','tagline','actors','director'])
     
-    movies["clean_title"] = movies["title"].apply(clean_title)
+    movies = movies.fillna('')
+    
+    movies['description'] = movies['title'] + ' ' + movies['overview'] + ' ' + movies['tagline'] + ' ' + movies['actors'] + ' ' + movies['director']
 
+    movies["clean_description"] = movies["description"].apply(clean_text)
+
+
+    #movies['keywords'] = movies['description'].apply(extract_keywords).apply(lambda x: " ".join(x))
 
     tfidf = TfidfVectorizer()
-    tfidf_matrix = tfidf.fit_transform(movies["clean_title"])
+    tfidf_matrix = tfidf.fit_transform(movies['clean_description'])
 
     cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
 
