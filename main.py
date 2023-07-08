@@ -11,7 +11,7 @@ connection = pymysql.connect(
     host='database1.c9chjjynggol.us-east-1.rds.amazonaws.com',
     user='admin',
     password='eustht45tOtk',
-    database='pi_mlops',
+    database='pi_movies',
     port=3306
 )   
 
@@ -19,7 +19,7 @@ connection = pymysql.connect(
 connection = pymysql.connect(
     host='localhost',
     user='root',
-    password='',
+    password='PeliNegraBlanca',
     database='pi_movies',
     port=3306
 )   '''
@@ -27,146 +27,97 @@ connection = pymysql.connect(
 app = FastAPI()
 
 
-''' Funcion 1: Se ingresa el mes y la funcion retorna la cantidad de peliculas que se estrenaron ese mes historicamente '''
-@app.get('/cantidad_filmaciones_mes/{mes}')
-def cantidad_filmaciones_mes(mes:str):
-    mes_num : int
-    if mes == 'enero':  #El nombre de mes ingresado en espanhol es contrastado para asignar un valor a la variable 'mes_num'
-        mes_num = 1     #La query para el la base de datos usa un numero para identificar cada mes
-    elif mes == 'febrero':
-        mes_num = 2
-    elif mes == 'marzo':
-        mes_num = 3
-    elif mes == 'abril':
-        mes_num = 4
-    elif mes == 'mayo':
-        mes_num = 5
-    elif mes == 'junio':
-        mes_num = 6
-    elif mes == 'julio':
-        mes_num = 7
-    elif mes == 'agosto':
-        mes_num = 8
-    elif mes == 'septiembre':
-        mes_num = 9
-    elif mes == 'octubre':
-        mes_num = 10
-    elif mes == 'noviembre':
-        mes_num = 11
-    elif mes == 'diciembre':
-        mes_num = 12
-    else:
-        respuesta = 0
-        mes_num = 0
+''' Funcion 1: Se ingresa un idioma, devuelve la cantidad de peliculas producidas en ese idioma '''
+@app.get('/peliculas_idioma/{idioma}')
+def peliculas_idioma(idioma:str):
     with connection.cursor() as cursor: #Consulta a la base de datos
-        cursor.execute(f"SELECT COUNT(*) FROM movies WHERE MONTH(release_date) = {mes_num}")
+        cursor.execute(f"SELECT COUNT(*) FROM movies WHERE original_language = '{idioma}'")
         respuesta = cursor.fetchone()
-    return {'mes':mes, 'cantidad':respuesta}
+    return {'idioma':idioma, 'cantidad':respuesta}
 
-''' Funcion 2: Se ingresa el dia y la funcion retorna la cantidad de peliculas que se estrenaron ese dia historicamente '''
-@app.get('/cantidad_filmaciones_dia/{dia}')
-def cantidad_filmaciones_dia(dia:str):
-    day : str
-    if dia == 'lunes':  #El parametro de la consulta a la base de datos es el nombre del dia en ingles
-        day = 'monday'  #Se traduce del espanhol al ingles y se almacena en la variable 'day'
-    elif dia == 'martes':
-        day = 'tuesday'
-    elif dia == 'miercoles':
-        day = 'wednesday'
-    elif dia == 'jueves':
-        day = 'thursday'
-    elif dia == 'viernes':
-        day = 'friday'
-    elif dia == 'sabado':
-        day = 'saturday'
-    elif dia == 'domingo':
-        day = 'sunday'
-    else:
-        day = ''
+''' Funcion 2: Se ingresa el titulo de una pelicula, retorna duracion y anho de estreno '''
+@app.get('/peliculas_duracion/{pelicula}')
+def peliculas_duracion(pelicula:str):
     with connection.cursor() as cursor: #Consulta a la base de datos
-        cursor.execute(f"SELECT COUNT(*) FROM movies WHERE DAYNAME(release_date) = '{day}'")
+        cursor.execute(f"SELECT `runtime` , `release_year`FROM `movies` WHERE `title` = '{pelicula}'")
         respuesta = cursor.fetchone()
-        
-    return {'dia':dia, 'cantidad':respuesta}
+        duracion = respuesta[0]
+        anio = respuesta[1]
+    return {'pelicula':pelicula, 'duracion': duracion,'anio':anio}
 
-'''Funcion 3 Se ingresa titulo filmacion, retornando titulo, anho de estreno y score'''
-@app.get('/score_titulo/{titulo}')
-def score_titulo(titulo: str):
-    with connection.cursor() as cursor: #Consulta a la base de datos
+'''Funcion 3 Se ingresa la franquicia, retornando la cantidad de peliculas, ganancia total y promedio'''
+@app.get('/franquicia/{franquicia}')
+def franquicia(franquicia: str):
+    with connection.cursor() as cursor:
         query = """
-            SELECT `release_year`, `popularity`
-            FROM `movies`
-            WHERE title = "{}"
-        """.format(titulo)
+            SELECT COUNT(*) , SUM(revenue)
+            FROM movies
+            WHERE belongs_to_collection LIKE '%{}%'
+        """.format(franquicia)
         cursor.execute(query)
         result = cursor.fetchone()
-        anho = result[0]
-        score = result[1]
-    return {'Titulo': titulo, 'Anho': anho, 'Popularidad': score}
+        cant = result[0]
+        total_revenue = result[1]
+        ganancia_promedio = total_revenue / cant if cant > 0 else 0
+    return {'franquicia': franquicia, 'cantidad': cant, 'ganancia_total': total_revenue, 'ganancia_promedio': ganancia_promedio}
 
-''' Funcion 4 Ingresa titulo, retorna el titulo, la cantidad de votos y el promedio de votaciones'''
-@app.get('/votos_titulo/{titulo}')
-def votos_titulo(titulo:str):
+''' Funcion 4 Ingresa el pais, como respuesta da el numero de peliculas producidas ahi '''
+@app.get('/peliculas_pais/{pais}')
+def peliculas_pais(pais:str):
     with connection.cursor() as cursor: #Consulta a la base de datos
         query = """
-            SELECT `release_year`, `vote_count`, `vote_average` 
-            FROM `movies`
-            WHERE `title` LIKE "%{}%"
-        """.format(titulo)
-        cursor.execute(query)
-        respuesta = cursor.fetchone()
-    anho = respuesta[0]
-    num_votos = respuesta[1]
-    prom_votos = respuesta[2]
-    if num_votos < 2000:    #Se evalua la condicion de tener no tener menos de 2000 votos
-        return {'Tiene menos de 2000 votos'}
-    return {'Titulo':titulo, 'Anho de Estreno':anho, 'Numero de Votos':num_votos , 'Promedio de votos':prom_votos}
-
-'''Funcion 5 Ingresa nombre de actor, retornando la ganancia toal y la cantidad de peliculas y promedio ganancia '''
-@app.get('/get_actor/{actor}')
-def get_actor(actor:str):
-    with connection.cursor() as cursor: #Consulta a la base de datos
-        query = """
-            SELECT SUM(`return`), COUNT(*)
+            SELECT COUNT(*)
             FROM movies
-            WHERE actors LIKE "%{}%";
-        """.format(actor)
+            WHERE production_countries LIKE "%{}%"
+        """.format(pais)
+        cursor.execute(query)
+        cantidad = cursor.fetchone()
+    return {'pais':pais, 'cantidad':cantidad}
+
+'''Funcion 5 Se ingresa productora, la funcion retorna la ganancia total y la cantidad de peliculas que se produjeron '''
+@app.get('/productoras_exitosas/{productora}')
+def productoras_exitosas(productora:str):
+    with connection.cursor() as cursor: #Consulta a la base de datos
+        query = """
+            SELECT COUNT(*) AS total_peliculas, SUM(revenue) AS total_revenue
+            FROM movies
+            WHERE production_companies LIKE "%{}%";
+        """.format(productora)
         cursor.execute(query)
         resultado = cursor.fetchone()
-        ganancia = resultado[0]
-        num_peliculas = resultado[1]
-        prom_ganancia = ganancia/num_peliculas  #Calculo promedio de la ganancia con el resultado de la consulta
-    return {'Actor':actor, 'Numero de Peliculas':num_peliculas, 'Ganancia Total':ganancia, 'Ganancia Promedio':prom_ganancia}
+        cantidad = resultado[0]
+        revenue_total = resultado[1]
+    return {'productora':productora, 'revenue_total':revenue_total, 'cantidad':cantidad}
 
 '''Funcion 6 Ingresa nombre de director, retornando ganancia total, y lista de peliculas con la fecha de lanzamiento, retorno y g'''
 @app.get('/get_director/{director}')
-def get_director(director:str):
+def get_director(nombre_director:str):
     with connection.cursor() as cursor: #Consulta a la base de datos
         query1 = """
             SELECT SUM(`return`)
             FROM movies
             WHERE director LIKE "%{}%";
-        """.format(director)
+        """.format(nombre_director)
         cursor.execute(query1) #Primero se consulta la ganancia total del Director
         ganancia = cursor.fetchone()
         query2 = """
-            SELECT title, release_year, budget, revenue, `return`
+            SELECT title, release_year, `return`, budget , revenue
             FROM movies
             WHERE director LIKE "%{}%";
-        """.format(director)
+        """.format(nombre_director)
         cursor.execute(query2)  #La segunda consulta trae la informacion solicitada de todas las peliculas del director
         movies_data = cursor.fetchall()
         data = {} #Creo diccionario para almacenar los resultados
-        data['Director'] = director
-        data['Ganancia Total'] = ganancia[0]
+        data['Director'] = nombre_director
+        data['retorno_total_director'] = ganancia[0]
         data['Peliculas'] = []
         for row in movies_data:
             pelicula = {}
             pelicula['Titulo'] = row[0]
-            pelicula['Anho de lanzamiento'] = row[1]
-            pelicula['Presupuesto'] = row[2]
-            pelicula['Ganancia'] = row[3]
-            pelicula['Retorno'] = row[4]
+            pelicula['Anho'] = row[1]
+            pelicula['retorno_pelicula'] = row[2]
+            pelicula['budget_pelicula'] = row[3]
+            pelicula['revenue_pelicula'] = row[4]
             data['Peliculas'].append(pelicula)
     return data
 
@@ -234,5 +185,7 @@ def recomendacion(titulo:str):
         return movies['title'].iloc[sim_indices]
     
     recommended_movies = get_recommendations(titulo)
+
+    recommended_movies = list(recommended_movies)
 
     return {'lista recomendada': recommended_movies} 

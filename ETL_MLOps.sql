@@ -6,7 +6,7 @@ USE pi_movies;
 DROP TABLE IF EXISTS `movies`;
 CREATE TABLE IF NOT EXISTS `movies` (
   `adult` TEXT, -- Se elimina
-  `belongs_to_collection` TEXT, -- Se elimina
+  `belongs_to_collection` TEXT,
   `budget` FLOAT,
   `genres` TEXT,
   `homepage` TEXT, -- Se elimina
@@ -17,11 +17,11 @@ CREATE TABLE IF NOT EXISTS `movies` (
   `overview` TEXT,
   `popularity` FLOAT,
   `poster_path` TEXT, -- Se elimina
-  `production_companies` TEXT, -- Se elimina
+  `production_companies` TEXT,
   `production_countries` TEXT,	-- Se elimina
   `release_date` TEXT,
   `revenue` FLOAT,
-  `runtime` VARCHAR(100), -- Se elimina
+  `runtime` VARCHAR(100),
   `spoken_languages` TEXT, -- Se elimina
   `status` VARCHAR(250),	-- Se elimina
   `tagline` TEXT,
@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS `movies` (
   `vote_average` FLOAT,
   `vote_count` FLOAT,
   `actors`	TEXT,
-  `director` TEXT,
-  `zeros` INT	-- Se elimina
+  `director`	TEXT,
+  `zeros`	INT	-- Se elimina
 ) ENGINE = InnoDB;
 
 
@@ -67,16 +67,7 @@ DROP `homepage`;
 -- === Hay otras columna que no se usan en el dataset, y por tanto se eliminan =====
 
 ALTER TABLE `movies`
-DROP `belongs_to_collection`;
-
-ALTER TABLE `movies`
-DROP `production_companies`;
-
-ALTER TABLE `movies`
 DROP `production_countries`;
-
-ALTER TABLE `movies`
-DROP `runtime`;
 
 ALTER TABLE `movies`
 DROP `spoken_languages`;
@@ -102,16 +93,6 @@ ADD COLUMN `release_year` INT AFTER `release_date`;
 UPDATE `movies`
 SET `release_year` = YEAR(release_date);
 
-/* ===== Los valores nulos de los campos `revenue` y `budget` deben ser rellenados por el numero 0 ============== */
-UPDATE `movies`
-SET `budget` = 0
-WHERE `budget` IS NULL;
-
-
-UPDATE `movies`
-SET `revenue` = 0
-WHERE `revenue` IS NULL;
--- Nota: esos campos no tenian valores nulos
 
 /* ===== Crear la columna con el retorno de la inversion `return` a partir de los campos `revenue`/`budget` ========= */ 
 ALTER TABLE `movies` ADD COLUMN `return` FLOAT;

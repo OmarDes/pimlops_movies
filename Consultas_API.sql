@@ -1,46 +1,43 @@
 /* DESARROLLO DE LAS CONSULTAS PARA HACER LAS FUNCIONES PARA LA API */
--- 1.=== Se ingresa un mes en idioma espanol. Debe devolver la cantidad de peliculas que se estrenaron ese mes =======
--- La consulta busca sobre la columna 'release_date' el mes del anno segun su numero ordinal:
-SELECT COUNT(*) FROM movies WHERE MONTH(release_date) = 2; -- 2 = febrero
+-- 1.=== Se ingresa un idioma, devuelve la cantidad de peliculas producidas en ese idioma =======
+-- La consulta busca sobre la columna 'original_language' el codigo de idioma:
+SELECT COUNT(*) FROM movies WHERE original_language = 'hi'; -- 
 
--- 2.=== Se ingresa el dia en idioma espanol. Debe devolver la cantidad de peliculas que fueron estrenadas ese dia
--- La consulta busca sobre la columna 'release_date' las coincidencias con el dia de la semana
-SELECT COUNT(*) FROM movies WHERE DAYNAME(release_date) = 'sunday';
+-- 2.=== Se ingresa el titulo de una pelicula, retorna duracion y anho de estreno ====
 
--- 3.=== Se ingresa el titulo de una filmacion, retorna titulo, anho de estreno y el score ====
-
-SELECT `release_year`, `popularity`
+SELECT `runtime` , `release_year`
 FROM `movies`
-WHERE `title` = 'Jumanji';
+WHERE `title` = 'Toy Story 2';
 
--- 4. ===== Se ingresa el titulo de una filmacion esperando como respuesta el titulo, la cantidad de votos y el promedio de votaciones ====
-
-SELECT `vote_count`, `vote_average`
-FROM `movies`
-WHERE `title` = 'Jumanji';
-
-SELECT *
+-- 3.=== Se ingresa franquicia. Debe devolver la cantidad de peliculas, ganancia total y promedio
+-- 
+SELECT COUNT(*) AS num_rows, SUM(revenue) AS total_revenue
 FROM movies
-WHERE `title` LIKE '%estrategia del caracol%';
+WHERE belongs_to_collection LIKE '%Bad Boys Collection%';
 
--- 5.==== Se ingresa actor, la funcion retorna la ganancia total y la cantidad de peliculas donde actuo ====
 
--- Replace 'Tom Hanks' with the actor's name you want to search for
-SELECT SUM(`return`) AS retorno, COUNT(*) AS number_of_movies
+-- 4. ===== Ingresa el pais, como respuesta da el numero de peliculas producidas ahi ====
+
+SELECT COUNT(*) AS total_rows
 FROM movies
-WHERE actors LIKE '%Robin Williams%';
+WHERE production_countries LIKE '%Colombia%';
 
+-- 5.==== Se ingresa productora, la funcion retorna la ganancia total y la cantidad de peliculas que se produjeron
+
+SELECT COUNT(*) AS total_peliculas, SUM(revenue) AS total_revenue
+FROM movies
+WHERE production_companies LIKE '%BBC Films%';
 
 
 -- 6.=== Se ingresa director, retorna la ganancia total, y cada pelicula que dirige ===
-	-- == con nombre, anho de lanzamiento, retorno, costo y ganancia
+	-- == con fecha de lanzamiento, retorno, costo y ganancia
     
 SELECT
     director,
     SUM(`return`) AS total_return,
-    GROUP_CONCAT(CONCAT(title, ' (', release_year, ') - Budget: ', budget, ', Revenue: ', revenue, ', Return: ', `return`) SEPARATOR '; ') AS movie_info
+    GROUP_CONCAT(CONCAT(title, ' (', release_year, ') - Budget: ', budget, ', Revenue: ', revenue, ', Return: ', `return`) SEPARATOR '; ') AS list_movies
 FROM movies
-WHERE director = 'Sergio Cabrera'
+WHERE director = 'Steven Spielberg'
 GROUP BY director;
 
 SELECT SUM(`return`) AS total_money
