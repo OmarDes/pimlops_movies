@@ -51,7 +51,7 @@ https://mlops-omardes.onrender.com
 Este es el esquema del deployment:
 
 <p align="center">
-<img src="https://github.com/OmarDes/pimlops_movies/raw/main/scr/EsquemaDeployment.PNG"  height=300>
+<img src="https://github.com/OmarDes/pimlops_movies/blob/main/src/EsquemaDeployment.PNG"  height=300>
 </p>
 
 ## **Modelo de Recomendacion**
