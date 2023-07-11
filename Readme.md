@@ -21,7 +21,7 @@ La base de su construcción es un dataset con alrededor de 45 mil registros de p
 
 ## **EDA**
 Primero el dataset es explorado con MS VS studio:
-+ Se determinan las dimensiones de ambos dataset, y sus respectivos camopos.
++ Se determinan las dimensiones de ambos dataset, y sus respectivos campos.
 
 + Se corrigen filas que no permiten su carga en MySQL WorkBench.
 
@@ -44,10 +44,20 @@ Primero desarrollo las consultas a la base de datos para poder responder a la in
 
 En el archivo 'main.py' esta el desarrollo de las API, incluida la funcion de ML
 
-La API se desarrolla con el framework FASTAPI. Esta se deploya en el servicio gratuito de render. En este enlace: mlops-omardes.onrender.com/docs se puede acceder a la API deployada
+La API se desarrolla con el framework FASTAPI. Esta se deploya en el servicio gratuito de render. En el siguiente enlace se puede acceder a la API deployada:
+
+https://mlops-omardes.onrender.com 
+
+Este es el esquema del deployment:
+
+<p align="center">
+<img src="https://github.com/OmarDes/pimlops_movies/raw/main/scr/EsquemaDeployment.PNG"  height=300>
+</p>
 
 ## **Modelo de Recomendacion**
 
 Se utiliza el algoritmo de similitud del coseno por su sencillez y baja demanda de recursos computacionales.
 
 Sin embargo no se puede evaluar todos los registros para hallar la recomendacion a un titulo en concreto, por eso antes de aplicar el algoritmo hago una consulta para saber a que genero pertenece la pelicula, luego hago la consulta con todas las peliculas de ese genero con un limite de 4000 registros.
+
+Para el desarrollo de la matriz de similitud empleo las columnas 'title', 'overview' , 'tagline', 'actors' y 'director'
